@@ -21,7 +21,6 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
     ? authHeader.split(" ")[1]
     : authHeader;
   
-    console.log(token);
     
   try {
     const decoded = jwt.verify(

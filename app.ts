@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { Error } from "mongoose";
 import mongoose from "mongoose";
 import AuthRouter from "./routes/Auth.router.js";
+import TaskRouter from "./routes/Task.router.js";
 import { errorHandlerdler } from "./Middlewares/Error.js";
 dotenv.config();
 const app = express();
@@ -19,6 +20,7 @@ mongoose
     console.log(err);
   });
 app.use("/Auth", AuthRouter);
+app.use("/tasks", TaskRouter);
 
 app.get("/", (_req, res) => {
   return res.status(200).json({ message: "Task API running" });

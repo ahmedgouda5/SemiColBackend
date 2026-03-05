@@ -1,15 +1,16 @@
 import { Request, Response } from "express";
 import Task from "../models/tasks.model.js";
+import Workspace from "../models/WorkSpaceModel.js";
 import { asyncHandler } from "../Middlewares/AsyncHandler.js";
 
 //! Create a new task
 export const createTaskController = asyncHandler(
   async (req: Request, res: Response) => {
-    const { title, description, status, dueDate } = req.body;
+    const { title, description, status, dueDate, workspace } = req.body;
 
-    if (!title || !description || !dueDate) {
+    if (!title || !description || !dueDate || !workspace) {
       return res.status(400).json({
-        message: "title, description and dueDate are required",
+        message: "title, description, dueDate and workspace are required",
       });
     }
 
@@ -19,12 +20,28 @@ export const createTaskController = asyncHandler(
         .json({ message: "Unauthorized, user id not found in token" });
     }
 
+    const existingWorkspace = await Workspace.findOne({
+      _id: workspace,
+      user: req.userId,
+    });
+
+    if (!existingWorkspace) {
+      return res.status(404).json({
+        message: "Workspace not found for this user",
+      });
+    }
+
     const task = await Task.create({
       title,
       description,
       status,
       dueDate,
       user: req.userId,
+      workspace,
+    });
+
+    await Workspace.findByIdAndUpdate(workspace, {
+      $push: { tasks: task._id },
     });
 
     return res
@@ -33,7 +50,7 @@ export const createTaskController = asyncHandler(
   }
 );
 
-//! Get all tasks for the authenticated user
+//! Get all tasks for the authenticated user (optionally filtered by workspace)
 export const getAllTasksController = asyncHandler(
   async (req: Request, res: Response) => {
     if (!req.userId) {
@@ -42,7 +59,18 @@ export const getAllTasksController = asyncHandler(
         .json({ message: "Unauthorized, user id not found in token" });
     }
 
-    const tasks = await Task.find({ user: req.userId });
+    const { workspaceId } = req.query;
+
+    const filter: {
+      user: string;
+      workspace?: string;
+    } = { user: req.userId };
+
+    if (workspaceId && typeof workspaceId === "string") {
+      filter.workspace = workspaceId;
+    }
+
+    const tasks = await Task.find(filter);
     return res
       .status(200)
       .json({ message: "Tasks fetched successfully", tasks });

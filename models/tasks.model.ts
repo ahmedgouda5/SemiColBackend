@@ -29,8 +29,14 @@ const TaskSchema = new Schema(
       ref: "User",
       required: true,
     },
+
+    workspace: {
+      type: Types.ObjectId,
+      ref: "Workspace",
+      required: true,
+    },
   },
-  { timestamps: true } 
+  { timestamps: true }
 );
 
 const Task = model("Task", TaskSchema);
